@@ -35,40 +35,54 @@ public class ArchiveModifier {
 		while(enumerator.hasMoreElements()){
 			ZipEntry current = (ZipEntry) enumerator.nextElement();
 			// need to create a new entry to reset properties that will need to be recomputed automatically
-			ZipEntry resetEntry = new ZipEntry(current.getName());
-			// copy over entry properties
-			resetEntry.setTime(current.getTime());
-			resetEntry.setComment(current.getComment());
-			resetEntry.setExtra(current.getExtra());
-			resetEntry.setSize(current.getSize());
-			resetEntry.setMethod(current.getMethod());
-			archiveEntries.put(current.getName(), resetEntry); // resets zip entry state
-			
+			ZipEntry resetEntry = resetEntry(current);
+			archiveEntries.put(current.getName(), resetEntry);
 		}
 		archive.close();
 	}
 
 	/**
-	 * Adds (or optionally overwrites) a archive entry
+	 * Adds (or optionally overwrites) an archive entry
 	 * 
-	 * @param entry The entry path (example a/b/c/test.txt)
-	 * @param file The contents of the file to add
-	 * @param overwrite True if an existing entry should be overwritten
+	 * @param entry
+	 *            The entry path (example a/b/c/test.txt)
+	 * @param file
+	 *            The contents of the file to add
+	 * @param overwrite
+	 *            True if an existing entry should be overwritten
 	 * @throws IOException
 	 *             Thrown if overwrite is false and the archive already contains
 	 *             the specified entry
 	 */
 	public void add(String entry, File file, boolean overwrite) throws IOException {
-		if(archiveEntries.containsKey(entry) && !overwrite){
+		add(new ZipEntry(entry), file, overwrite);
+	}
+	
+	/**
+	 * Adds (or optionally overwrites) an archive entry with the specified entry
+	 * properties
+	 * 
+	 * @param entry
+	 *            ZipEntry with the properties to add or overwrite
+	 * @param file
+	 *            The contents of the file to add
+	 * @param overwrite
+	 *            True if an existing entry should be overwritten
+	 * @throws IOException
+	 *             Thrown if overwrite is false and the archive already contains
+	 *             the specified entry
+	 */
+	public void add(ZipEntry entry, File file, boolean overwrite) throws IOException {
+		ZipEntry newEntry = resetEntry(entry);
+		if(archiveEntries.containsKey(entry.getName()) && !overwrite){
 			throw new IOException("Archive already contains entry: " + entry);
 		} else {
 			 // remove an entry if one already exists
-			archiveEntries.remove(entry);
-			archiveEntriesToAdd.remove(entry);
+			archiveEntries.remove(entry.getName());
+			archiveEntriesToAdd.remove(entry.getName());
 			// add a new entry
-			ZipEntry newEntry = new ZipEntry(entry);
-			archiveEntries.put(entry, newEntry);
-			archiveEntriesToAdd.put(entry, file);
+			archiveEntries.put(entry.getName(), newEntry);
+			archiveEntriesToAdd.put(entry.getName(), file);
 		}
 	}
 	
@@ -78,8 +92,17 @@ public class ArchiveModifier {
 	 * @param entry
 	 */
 	public void remove(String entry){
-		archiveEntries.remove(entry);
-		archiveEntriesToAdd.remove(entry);
+		remove(new ZipEntry(entry));
+	}
+	
+	/**
+	 * Removes the specified entry if one exits (example: a/b/c/test.txt)
+	 * 
+	 * @param entry
+	 */
+	public void remove(ZipEntry entry){
+		archiveEntries.remove(entry.getName());
+		archiveEntriesToAdd.remove(entry.getName());
 	}
 	
 	/**
@@ -185,6 +208,24 @@ public class ArchiveModifier {
 		}
 		
 		return result.toString();
+	}
+	
+	/**
+	 * Resets a zip entry. Copies over the time, comments, extras, and compression method.
+	 * 
+	 * File sizes and other properties are left to be recomputed automatically.
+	 * 
+	 * @param entry
+	 * @return
+	 */
+	private ZipEntry resetEntry(ZipEntry entry) {
+		ZipEntry resetEntry = new ZipEntry(entry.getName());
+		// copy over entry properties
+		resetEntry.setTime(entry.getTime());
+		resetEntry.setComment(entry.getComment());
+		resetEntry.setExtra(entry.getExtra());
+		resetEntry.setMethod(entry.getMethod());
+		return resetEntry;
 	}
 	
 }
