@@ -68,12 +68,22 @@ public class ArchiveModifier {
 	 *             the specified entry
 	 */
 	public void add(String entry, File file, boolean overwrite) throws IOException {
-		add(new ZipEntry(entry), file, overwrite);
+		ZipEntry newEntry = new ZipEntry(entry);
+		if(archiveEntries.containsKey(entry) && !overwrite){
+			throw new IOException("Archive already contains entry: " + entry);
+		} else {
+			 // remove an entry if one already exists
+			archiveEntries.remove(entry);
+			archiveEntriesToAdd.remove(entry);
+			// add a new entry
+			archiveEntries.put(entry, newEntry);
+			archiveEntriesToAdd.put(entry, file);
+		}
 	}
 	
 	/**
 	 * Adds (or optionally overwrites) an archive entry with the specified entry
-	 * properties
+	 * properties.  
 	 * 
 	 * @param entry
 	 *            ZipEntry with the properties to add or overwrite
@@ -87,6 +97,7 @@ public class ArchiveModifier {
 	 */
 	public void add(ZipEntry entry, File file, boolean overwrite) throws IOException {
 		ZipEntry newEntry = resetEntry(entry);
+		newEntry.setSize(file.length());
 		if(archiveEntries.containsKey(entry.getName()) && !overwrite){
 			throw new IOException("Archive already contains entry: " + entry);
 		} else {
