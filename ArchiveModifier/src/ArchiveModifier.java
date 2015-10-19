@@ -23,10 +23,23 @@ import java.util.zip.ZipOutputStream;
  */
 public class ArchiveModifier {
 
+	/**
+	 * The directory separator character for archive files as a string
+	 */
+	public static final String SEPERATOR = "/";
+	
 	private HashMap<String,ZipEntry> archiveEntries = new HashMap<String,ZipEntry>();
 	private HashMap<String,File> archiveEntriesToAdd = new HashMap<String,File>();
 	private File archiveFile;
 	
+	/**
+	 * Creates a new ArchiveModifer with the given archive to be modified
+	 * 
+	 * @param archiveFile The archive to be modified.
+	 * 
+	 * @throws ZipException
+	 * @throws IOException
+	 */
 	public ArchiveModifier(File archiveFile) throws ZipException, IOException {
 		this.archiveFile = archiveFile;
 		ZipFile archive = new ZipFile(archiveFile);
@@ -103,6 +116,24 @@ public class ArchiveModifier {
 	public void remove(ZipEntry entry){
 		archiveEntries.remove(entry.getName());
 		archiveEntriesToAdd.remove(entry.getName());
+	}
+	
+	/**
+	 * Removes any entries with the matching file name prefix
+	 * 
+	 * @param directory
+	 */
+	public void removeSubdirectory(String directory){
+		// clear the entries that may have already existed in the archive
+		LinkedList<String> entriesToRemove = new LinkedList<String>();
+		for(Entry<String,ZipEntry> zipEntry : archiveEntries.entrySet()){
+			if(zipEntry.getKey().startsWith(directory)){
+				entriesToRemove.add(zipEntry.getKey());
+			}
+		}
+		for(String entryToRemove : entriesToRemove){
+			archiveEntries.remove(entryToRemove);
+		}	
 	}
 	
 	/**
@@ -192,6 +223,7 @@ public class ArchiveModifier {
 	public String toString(){
 		StringBuilder result = new StringBuilder();
 		
+		// sort the entries
 		ArrayList<String> allEntries = new ArrayList<String>(archiveEntries.keySet().size());
 		allEntries.addAll(archiveEntries.keySet());
 		Collections.sort(allEntries);
